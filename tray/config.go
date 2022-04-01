@@ -19,6 +19,8 @@ type LayerConfig struct {
 
 type Config struct {
 	LayerInfo []LayerConfig `json:"layers"`
+	InfoMods  string        `json:"infoMods"`
+	InfoKey   string        `json:"infoKey"`
 }
 
 func LoadConfiguration() (Config, error) {
@@ -46,7 +48,7 @@ func initConfig() {
 	defaultBind := []LayerConfig{
 		{"1", "ctrl-shift-win-alt", "Gaming", "kb_light"},
 	}
-	defaultConfig := Config{defaultBind}
+	defaultConfig := Config{defaultBind, "ctrl-shift-win-alt", "0"}
 
 	json, err := json.MarshalIndent(defaultConfig, "", "    ")
 

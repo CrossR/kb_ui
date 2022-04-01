@@ -166,6 +166,9 @@ func traySetup(state *TrayState) {
 		<-mConfigure.ClickedCh
 		OpenConfig()
 	}()
+
+	// Finally, hook up the info binding.
+	infoKeybind(state, &config)
 }
 
 // Setup the actual keybinds to notify the user of layer changes.
@@ -196,4 +199,37 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 	}()
 
 	keybind.bind = hk
+}
+
+// A small helper function that just alerts the user on the current state.
+func infoKeybind(state *TrayState, config *Config) *Keybinding {
+
+	mods := ParseModifiers(config.InfoMods)
+	if len(mods) == 0 {
+		return nil
+	}
+
+	key, err := ParseKey(config.InfoKey)
+	if err != nil {
+		systray.Quit()
+	}
+
+	keybind := Keybinding{nil, mods, key, -1, "Info", nil}
+	hk := hotkey.New(keybind.mods, keybind.key)
+	err = hk.Register()
+
+	if err != nil {
+		return nil
+	}
+
+	go func() {
+		for hk != nil {
+			<-hk.Keydown()
+			beeep.Notify(state.layer_name, "The current keybinding layer is "+state.layer_name, "")
+		}
+	}()
+
+	keybind.bind = hk
+
+	return &keybind
 }
