@@ -8,7 +8,8 @@ import (
 	"github.com/getlantern/systray"
 	"github.com/getlantern/systray/example/icon"
 
-    "golang.design/x/hotkey"
+	"github.com/gen2brain/beeep"
+	"golang.design/x/hotkey"
 )
 
 func Start() {
@@ -27,19 +28,20 @@ func onReady() {
 	systray.SetTooltip("Lantern")
 	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
 
-        hk := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
+	hk := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
 	err := hk.Register()
 	if err != nil {
 		return
 	}
 	fmt.Printf("hotkey: %v is registered\n", hk)
 
-        go func() {
-        for {
-	<-hk.Keydown()
-	fmt.Printf("hotkey: %v is down\n", hk)
-        }
-        }()
+	go func() {
+		for {
+			<-hk.Keydown()
+			fmt.Printf("hotkey: %v is down\n", hk)
+			beeep.Notify("Pressed %v", "Down", "")
+		}
+	}()
 
 	go func() {
 		<-mQuitOrig.ClickedCh
