@@ -7,6 +7,8 @@ import (
 
 	"github.com/getlantern/systray"
 	"github.com/getlantern/systray/example/icon"
+
+    "golang.design/x/hotkey"
 )
 
 func Start() {
@@ -16,6 +18,7 @@ func Start() {
 	}
 
 	systray.Run(onReady, onExit)
+	fmt.Println("We are passed the run...")
 }
 
 func onReady() {
@@ -23,6 +26,21 @@ func onReady() {
 	systray.SetTitle("Awesome App")
 	systray.SetTooltip("Lantern")
 	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
+
+        hk := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
+	err := hk.Register()
+	if err != nil {
+		return
+	}
+	fmt.Printf("hotkey: %v is registered\n", hk)
+
+        go func() {
+        for {
+	<-hk.Keydown()
+	fmt.Printf("hotkey: %v is down\n", hk)
+        }
+        }()
+
 	go func() {
 		<-mQuitOrig.ClickedCh
 		fmt.Println("Requesting quit")
@@ -34,72 +52,16 @@ func onReady() {
 	go func() {
 		systray.SetTemplateIcon(icon.Data, icon.Data)
 		systray.SetTitle("Awesome App")
-		systray.SetTooltip("Pretty awesome棒棒嗒")
-		mChange := systray.AddMenuItem("Change Me", "Change Me")
-		mChecked := systray.AddMenuItemCheckbox("Unchecked", "Check Me", true)
-		mEnabled := systray.AddMenuItem("Enabled", "Enabled")
-		// Sets the icon of a menu item. Only available on Mac.
-		mEnabled.SetTemplateIcon(icon.Data, icon.Data)
+		systray.SetTooltip("Pretty awesome")
 
-		systray.AddMenuItem("Ignored", "Ignored")
-
-		subMenuTop := systray.AddMenuItem("SubMenuTop", "SubMenu Test (top)")
-		subMenuMiddle := subMenuTop.AddSubMenuItem("SubMenuMiddle", "SubMenu Test (middle)")
-		subMenuBottom := subMenuMiddle.AddSubMenuItemCheckbox("SubMenuBottom - Toggle Panic!", "SubMenu Test (bottom) - Hide/Show Panic!", false)
-		subMenuBottom2 := subMenuMiddle.AddSubMenuItem("SubMenuBottom - Panic!", "SubMenu Test (bottom)")
-
-		mUrl := systray.AddMenuItem("Open UI", "my home")
-		mQuit := systray.AddMenuItem("退出", "Quit the whole app")
-
-		// Sets the icon of a menu item. Only available on Mac.
-		mQuit.SetIcon(icon.Data)
+		mChange := systray.AddMenuItem("Click Me", "Click Me")
 
 		systray.AddSeparator()
-		mToggle := systray.AddMenuItem("Toggle", "Toggle the Quit button")
-		shown := true
-		toggle := func() {
-			if shown {
-				subMenuBottom.Check()
-				subMenuBottom2.Hide()
-				mQuitOrig.Hide()
-				mEnabled.Hide()
-				shown = false
-			} else {
-				subMenuBottom.Uncheck()
-				subMenuBottom2.Show()
-				mQuitOrig.Show()
-				mEnabled.Show()
-				shown = true
-			}
-		}
 
 		for {
 			select {
 			case <-mChange.ClickedCh:
-				mChange.SetTitle("I've Changed")
-			case <-mChecked.ClickedCh:
-				if mChecked.Checked() {
-					mChecked.Uncheck()
-					mChecked.SetTitle("Unchecked")
-				} else {
-					mChecked.Check()
-					mChecked.SetTitle("Checked")
-				}
-			case <-mEnabled.ClickedCh:
-				mEnabled.SetTitle("Disabled")
-				mEnabled.Disable()
-			case <-mUrl.ClickedCh:
-				fmt.Println("Clicked open...")
-			case <-subMenuBottom2.ClickedCh:
-				panic("panic button pressed")
-			case <-subMenuBottom.ClickedCh:
-				toggle()
-			case <-mToggle.ClickedCh:
-				toggle()
-			case <-mQuit.ClickedCh:
-				systray.Quit()
-				fmt.Println("Quit2 now...")
-				return
+				mChange.SetTitle("Clicked")
 			}
 		}
 	}()
