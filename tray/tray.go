@@ -3,8 +3,9 @@ package tray
 import (
 	"fmt"
 
+	"github.com/CrossR/kb_ui/tray/icons"
+
 	"github.com/getlantern/systray"
-	"github.com/getlantern/systray/example/icon"
 
 	"github.com/gen2brain/beeep"
 	"golang.design/x/hotkey"
@@ -53,7 +54,7 @@ func trayEnd(state *TrayState) {
 func traySetup(state *TrayState) {
 
 	// TODO: Swap tray icon to a different one.
-	systray.SetTemplateIcon(icon.Data, icon.Data)
+	systray.SetTemplateIcon(icons.KB_Dark_Data, icons.KB_Dark_Data)
 	systray.SetTooltip("Keyboard Status")
 
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
