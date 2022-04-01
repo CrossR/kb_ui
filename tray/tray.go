@@ -17,6 +17,7 @@ type Keybinding struct {
 	key  hotkey.Key
 	id   int
 	name string
+	icon *[]byte
 }
 
 type TrayState struct {
@@ -56,22 +57,51 @@ func traySetup(state *TrayState) {
 	systray.SetTemplateIcon(icons.KB_Dark_Data, icons.KB_Dark_Data)
 	systray.SetTooltip("Keyboard Status")
 
+	config, err := LoadConfiguration()
+
+	if len(config.layerInfo) == 0 {
+		systray.Quit()
+		return
+	}
+
+	defaultName := fmt.Sprintf("%s Layer", config.layerInfo[0].Name)
+	mCurrentLayer := systray.AddMenuItem(defaultName, defaultName)
+
+	if err != nil {
+		systray.Quit()
+		return
+	}
+
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-	// TODO: Load the user's configuration, such that this is dynamic.
-	// TODO: Config should include the layer name, and the keybindings.
-	keys := []hotkey.Key{hotkey.KeyS, hotkey.KeyT}
+	for i, binding := range config.layerInfo {
 
-	for _, key := range keys {
+		mods := ParseModifiers(binding.Mods)
+		if len(mods) == 0 {
+			systray.Quit()
+			break
+		}
 
-		bind := Keybinding{nil, []hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, key, 0, ""}
-		setupKeybinding(&bind)
+		key, err := ParseKey(binding.Key)
+		if err != nil {
+			systray.Quit()
+			break
+		}
 
-		if bind.bind == nil {
+		icon, err := ParseIcon(binding.Icon)
+		if err != nil {
+			systray.Quit()
+			break
+		}
+
+		keybind := Keybinding{nil, mods, key, i, binding.Name, icon}
+		setupKeybinding(&keybind, mCurrentLayer)
+
+		if keybind.bind == nil {
 			continue
 		}
 
-		*state.keybinds = append(*state.keybinds, bind)
+		*state.keybinds = append(*state.keybinds, keybind)
 	}
 
 	go func() {
@@ -81,7 +111,7 @@ func traySetup(state *TrayState) {
 }
 
 // Setup the actual keybinds to notify the user of layer changes.
-func setupKeybinding(bind *Keybinding) {
+func setupKeybinding(bind *Keybinding, trayItem *systray.MenuItem) {
 
 	hk := hotkey.New(bind.mods, bind.key)
 	err := hk.Register()
@@ -95,6 +125,7 @@ func setupKeybinding(bind *Keybinding) {
 		for hk != nil {
 			<-hk.Keydown()
 			beeep.Notify("Layer Swapped", layerSwapName, "")
+			trayItem.SetTitle(fmt.Sprintf("%s Layer", bind.name))
 		}
 	}()
 
