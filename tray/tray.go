@@ -53,7 +53,6 @@ func trayEnd(state *TrayState) {
 // and react to them.
 func traySetup(state *TrayState) {
 
-	// TODO: Swap tray icon to a different one.
 	systray.SetTemplateIcon(icons.KB_Dark_Data, icons.KB_Dark_Data)
 	systray.SetTooltip("Keyboard Status")
 
@@ -64,13 +63,15 @@ func traySetup(state *TrayState) {
 	keys := []hotkey.Key{hotkey.KeyS, hotkey.KeyT}
 
 	for _, key := range keys {
-		hk, ok := setupKeybinding([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, key)
 
-		if !ok {
+		bind := Keybinding{nil, []hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, key, 0, ""}
+		setupKeybinding(&bind)
+
+		if bind.bind == nil {
 			continue
 		}
 
-		*state.keybinds = append(*state.keybinds, hk)
+		*state.keybinds = append(*state.keybinds, bind)
 	}
 
 	go func() {
@@ -80,23 +81,22 @@ func traySetup(state *TrayState) {
 }
 
 // Setup the actual keybinds to notify the user of layer changes.
-// TODO: Swap from returning a struct to updating the given struct.
-func setupKeybinding(mods []hotkey.Modifier, key hotkey.Key) (bind Keybinding, ok bool) {
+func setupKeybinding(bind *Keybinding) {
 
-	hk := hotkey.New(mods, key)
+	hk := hotkey.New(bind.mods, bind.key)
 	err := hk.Register()
 
 	if err != nil {
-		return Keybinding{}, false
+		return
 	}
 
 	go func() {
-		hotKeyPressed := fmt.Sprintf("%s was pressed", hk.String())
+		layerSwapName := fmt.Sprintf("Swapped to %s layer", bind.name)
 		for hk != nil {
 			<-hk.Keydown()
-			beeep.Notify("Pressed", hotKeyPressed, "")
+			beeep.Notify("Layer Swapped", layerSwapName, "")
 		}
 	}()
 
-	return Keybinding{hk, mods, key, 0, ""}, true
+	bind.bind = hk
 }
