@@ -74,13 +74,13 @@ func ParseIcon(icon string) ([]byte, error) {
 	case "kb_light":
 		return icons.KB_Light_Data, nil
 	case "gaming_dark":
-		return icons.KB_Dark_Data, nil
+		return icons.Game_Dark_Data, nil
 	case "gaming_light":
-		return icons.KB_Light_Data, nil
+		return icons.Game_Light_Data, nil
 	case "mac_dark":
-		return icons.KB_Dark_Data, nil
+		return icons.Mac_Dark_Data, nil
 	case "mac_light":
-		return icons.KB_Light_Data, nil
+		return icons.Mac_Light_Data, nil
 	}
 
 	return icons.KB_Dark_Data, fmt.Errorf("unknown icon: %s", icon)

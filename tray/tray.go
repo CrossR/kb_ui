@@ -94,7 +94,7 @@ func traySetup(state *TrayState) {
 			break
 		}
 
-		keybind := Keybinding{nil, mods, key, i, binding.Name, icon}
+		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon}
 		setupKeybinding(&keybind, mCurrentLayer)
 
 		if keybind.bind == nil {
@@ -126,6 +126,7 @@ func setupKeybinding(bind *Keybinding, trayItem *systray.MenuItem) {
 			<-hk.Keydown()
 			beeep.Notify("Layer Swapped", layerSwapName, "")
 			trayItem.SetTitle(fmt.Sprintf("%s Layer", bind.name))
+			systray.SetIcon(*bind.icon)
 		}
 	}()
 
