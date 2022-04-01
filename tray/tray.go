@@ -212,7 +212,7 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 
 	mods := ParseModifiers(config.InfoMods)
 	if len(mods) == 0 {
-		return Keybinding{}, errors.New("Info keybind declared with no modifiers")
+		return Keybinding{}, errors.New("info keybind declared with no modifiers")
 	}
 
 	key, err := ParseKey(config.InfoKey)
@@ -225,7 +225,7 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 	err = hk.Register()
 
 	if err != nil {
-		return Keybinding{}, errors.New("Info keybind failed to register")
+		return Keybinding{}, errors.New("info keybind failed to register")
 	}
 
 	go func() {
