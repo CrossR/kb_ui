@@ -24,7 +24,7 @@ type Config struct {
 func LoadConfiguration() (Config, error) {
 	cfg := Config{}
 
-	configFile := xdg.ConfigHome + "/kb_ui/config.json"
+	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
 
 	if _, err := os.Stat(configFile); errors.Is(err, os.ErrNotExist) {
 		initConfig()
@@ -54,7 +54,7 @@ func initConfig() {
 		return
 	}
 
-	configFile := xdg.ConfigHome + "/kb_ui/config.json"
+	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
 	err = ioutil.WriteFile(configFile, json, 0644)
 
 	if err != nil {
@@ -65,6 +65,6 @@ func initConfig() {
 
 // Open the configuration file in the default reader for the JSON file type.
 func OpenConfig() {
-	configFile := xdg.ConfigHome + "/kb_ui/config.json"
+	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
 	open.Start(configFile)
 }
