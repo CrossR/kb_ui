@@ -2,6 +2,7 @@ package tray
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -170,7 +171,10 @@ func traySetup(state *TrayState) {
 	}()
 
 	// Finally, hook up the info binding.
-	infoKeybind(state, &config)
+	infoBind, err := infoKeybind(state, &config)
+	if err != nil {
+		*state.keybinds = append(*state.keybinds, infoBind)
+	}
 }
 
 // Setup the actual keybinds to notify the user of layer changes.
@@ -204,11 +208,11 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 }
 
 // A small helper function that just alerts the user on the current state.
-func infoKeybind(state *TrayState, config *Config) *Keybinding {
+func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 
 	mods := ParseModifiers(config.InfoMods)
 	if len(mods) == 0 {
-		return nil
+		return Keybinding{}, errors.New("Info keybind declared with no modifiers")
 	}
 
 	key, err := ParseKey(config.InfoKey)
@@ -221,7 +225,7 @@ func infoKeybind(state *TrayState, config *Config) *Keybinding {
 	err = hk.Register()
 
 	if err != nil {
-		return nil
+		return Keybinding{}, errors.New("Info keybind failed to register")
 	}
 
 	go func() {
@@ -233,5 +237,5 @@ func infoKeybind(state *TrayState, config *Config) *Keybinding {
 
 	keybind.bind = hk
 
-	return &keybind
+	return keybind, nil
 }
