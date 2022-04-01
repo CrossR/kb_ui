@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/adrg/xdg"
+	"github.com/skratchdot/open-golang/open"
 )
 
 type LayerConfig struct {
@@ -17,7 +18,7 @@ type LayerConfig struct {
 }
 
 type Config struct {
-	LayerInfo []LayerConfig
+	LayerInfo []LayerConfig `json:"layers"`
 }
 
 func LoadConfiguration() (Config, error) {
@@ -35,7 +36,7 @@ func LoadConfiguration() (Config, error) {
 		return Config{}, err
 	}
 
-	json.Unmarshal(file, &cfg.LayerInfo)
+	json.Unmarshal(file, &cfg)
 
 	return cfg, nil
 }
@@ -43,7 +44,7 @@ func LoadConfiguration() (Config, error) {
 func initConfig() {
 
 	defaultBind := []LayerConfig{
-		{"1", "ctrl-shift-win-alt", "Gaming", "kb_gaming"},
+		{"1", "ctrl-shift-win-alt", "Gaming", "kb_light"},
 	}
 	defaultConfig := Config{defaultBind}
 
