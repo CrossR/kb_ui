@@ -44,16 +44,22 @@ func trayEnd(state *TrayState) {
 		hk.bind.Unregister()
 		hk.bind = nil
 	}
+
+	// TODO: Save the current state of the application to load on next run.
 }
 
 // On ready, load the user configuration, setup the keybindings, then just wait
 // and react to them.
 func traySetup(state *TrayState) {
+
+	// TODO: Swap tray icon to a different one.
 	systray.SetTemplateIcon(icon.Data, icon.Data)
 	systray.SetTooltip("Keyboard Status")
 
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
+	// TODO: Load the user's configuration, such that this is dynamic.
+	// TODO: Config should include the layer name, and the keybindings.
 	keys := []hotkey.Key{hotkey.KeyS, hotkey.KeyT}
 
 	for _, key := range keys {
@@ -72,6 +78,8 @@ func traySetup(state *TrayState) {
 	}()
 }
 
+// Setup the actual keybinds to notify the user of layer changes.
+// TODO: Swap from returning a struct to updating the given struct.
 func setupKeybinding(mods []hotkey.Modifier, key hotkey.Key) (bind Keybinding, ok bool) {
 
 	hk := hotkey.New(mods, key)
