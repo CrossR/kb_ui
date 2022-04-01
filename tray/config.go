@@ -61,3 +61,9 @@ func initConfig() {
 	}
 
 }
+
+// Open the configuration file in the default reader for the JSON file type.
+func OpenConfig() {
+	configFile := xdg.ConfigHome + "/kb_ui/config.json"
+	open.Start(configFile)
+}
