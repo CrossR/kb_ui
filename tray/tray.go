@@ -2,8 +2,6 @@ package tray
 
 import (
 	"fmt"
-	"io/ioutil"
-	"time"
 
 	"github.com/getlantern/systray"
 	"github.com/getlantern/systray/example/icon"
@@ -13,58 +11,44 @@ import (
 )
 
 func Start() {
-	onExit := func() {
-		now := time.Now()
-		ioutil.WriteFile(fmt.Sprintf(`on_exit_%d.txt`, now.UnixNano()), []byte(now.String()), 0644)
-	}
-
 	systray.Run(onReady, onExit)
-	fmt.Println("We are passed the run...")
 }
 
+// On exit, save the current state of the application, un-register any keybindings.
+func onExit() {
+}
+
+// On ready, load the user configuration, setup the keybindings, then just wait
+// and react to them.
 func onReady() {
 	systray.SetTemplateIcon(icon.Data, icon.Data)
-	systray.SetTitle("Awesome App")
-	systray.SetTooltip("Lantern")
-	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
+	systray.SetTooltip("Keyboard Status")
 
-	hk := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
-	err := hk.Register()
-	if err != nil {
-		return
-	}
-	fmt.Printf("hotkey: %v is registered\n", hk)
+	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
+
+        setupKeybinding([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
+	setupKeybinding([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyT)
 
 	go func() {
-		for {
-			<-hk.Keydown()
-			fmt.Printf("hotkey: %v is down\n", hk)
-			beeep.Notify("Pressed %v", "Down", "")
-		}
-	}()
-
-	go func() {
-		<-mQuitOrig.ClickedCh
+		<-mQuit.ClickedCh
 		fmt.Println("Requesting quit")
 		systray.Quit()
 		fmt.Println("Finished quitting")
 	}()
+}
 
-	// We can manipulate the systray in other goroutines
+func setupKeybinding(mods []hotkey.Modifier, key hotkey.Key) {
+
+	hk := hotkey.New(mods, key)
+	err := hk.Register()
+	if err != nil {
+		return
+	}
+
 	go func() {
-		systray.SetTemplateIcon(icon.Data, icon.Data)
-		systray.SetTitle("Awesome App")
-		systray.SetTooltip("Pretty awesome")
-
-		mChange := systray.AddMenuItem("Click Me", "Click Me")
-
-		systray.AddSeparator()
-
 		for {
-			select {
-			case <-mChange.ClickedCh:
-				mChange.SetTitle("Clicked")
-			}
+			<-hk.Keydown()
+			beeep.Notify("Pressed", "Down", "")
 		}
 	}()
 }
