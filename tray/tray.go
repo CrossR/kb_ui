@@ -152,6 +152,8 @@ func traySetup(state *TrayState) {
 		if binding.Name == prevState.PreviousName {
 			mCurrentLayer.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
 			systray.SetIcon(*keybind.icon)
+			state.layer_id = i
+			state.layer_name = keybind.name
 		}
 	}
 
