@@ -38,32 +38,6 @@ func ParseKey(key string) (hotkey.Key, error) {
 	return hotkey.KeyA, fmt.Errorf("unknown key: %s", key)
 }
 
-func ParseModifiers(modifiers string) []hotkey.Modifier {
-
-	lower_modifiers := strings.ToLower(modifiers)
-	mods := []hotkey.Modifier{}
-
-	// TODO: This needs to be expanded to support Windows and Linux modifiers.
-
-	if strings.Contains(lower_modifiers, "ctrl") {
-		mods = append(mods, hotkey.ModCtrl)
-	}
-
-	if strings.Contains(lower_modifiers, "alt") {
-		mods = append(mods, hotkey.ModOption)
-	}
-
-	if strings.Contains(lower_modifiers, "shift") {
-		mods = append(mods, hotkey.ModShift)
-	}
-
-	if strings.Contains(lower_modifiers, "win") {
-		mods = append(mods, hotkey.ModCmd)
-	}
-
-	return mods
-}
-
 func ParseIcon(icon string) ([]byte, error) {
 
 	lower_icon := strings.ToLower(icon)
