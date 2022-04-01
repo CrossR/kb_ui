@@ -1,0 +1,64 @@
+name: Compile
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build - ${{ matrix.pretty-name }}
+    runs-on: "${{ matrix.os }}"
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            pretty-name: Linux
+            extra_flags: ""
+            suffix: ""
+          - os: macos-latest
+            pretty-name: macOS
+            extra_flags: ""
+            suffix: ""
+          - os: windows-latest
+            pretty-name: Windows
+            extra_flags: "-ldflags '-H=windowsgui'"
+            suffix: "exe"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Install dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt -y install libayatana-appindicator3-dev
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            %LocalAppData%\go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build
+        run: env CGO_ENABLED=1 GO111MODULE=on go build -v ${{ matrix.extra_flags }} ./...
+
+      - name: Archive
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}-sciLogger
+          path: ./sciLogger${{ matrix.suffix }}
