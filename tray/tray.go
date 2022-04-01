@@ -59,12 +59,12 @@ func traySetup(state *TrayState) {
 
 	config, err := LoadConfiguration()
 
-	if len(config.layerInfo) == 0 {
+	if len(config.LayerInfo) == 0 {
 		systray.Quit()
 		return
 	}
 
-	defaultName := fmt.Sprintf("%s Layer", config.layerInfo[0].Name)
+	defaultName := fmt.Sprintf("%s Layer", config.LayerInfo[0].Name)
 	mCurrentLayer := systray.AddMenuItem(defaultName, defaultName)
 
 	if err != nil {
@@ -74,7 +74,7 @@ func traySetup(state *TrayState) {
 
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-	for i, binding := range config.layerInfo {
+	for i, binding := range config.LayerInfo {
 
 		mods := ParseModifiers(binding.Mods)
 		if len(mods) == 0 {
