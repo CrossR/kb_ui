@@ -7,7 +7,7 @@ IF "%1"=="" GOTO NOICO
 IF NOT EXIST %1 GOTO BADFILE
 IF "%2"=="" GOTO NONAME
 ECHO Creating iconwin.go
-ECHO go:build windows  > iconwin.go
+ECHO //go:build windows  > iconwin.go
 ECHO. >> iconwin.go
 TYPE %1 | %GOPATH%\bin\2goarray %2 icons >> iconwin.go
 GOTO DONE
