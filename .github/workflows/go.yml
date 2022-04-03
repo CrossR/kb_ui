@@ -56,9 +56,13 @@ jobs:
 
       - name: Build
         run: env CGO_ENABLED=1 GO111MODULE=on go build -v ${{ matrix.extra_flags }} ./...
+        
+      - name: Rename executable
+        run: |
+          mv ./tray ./kb_ui${{ matrix.suffix }}
           
       - name: Archive
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.os }}-kb_ui
-          path: ./tray${{ matrix.suffix }}
+          path: ./kb_ui${{ matrix.suffix }}
