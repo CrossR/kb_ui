@@ -25,7 +25,7 @@ jobs:
           - os: windows-latest
             pretty-name: Windows
             extra_flags: "-ldflags '-H=windowsgui'"
-            suffix: "exe"
+            suffix: ".exe"
 
     steps:
       - name: Checkout code
@@ -60,5 +60,5 @@ jobs:
       - name: Archive
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.os }}-sciLogger
-          path: ./sciLogger${{ matrix.suffix }}
+          name: ${{ matrix.os }}-kb_ui
+          path: ./kb_ui${{ matrix.suffix }}
