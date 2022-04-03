@@ -56,7 +56,13 @@ jobs:
 
       - name: Build
         run: env CGO_ENABLED=1 GO111MODULE=on go build -v ${{ matrix.extra_flags }} ./...
-
+        
+      - name: List files
+        if: runner.os == 'Linux'
+        run: |
+          ls -l
+          ls -l *
+          
       - name: Archive
         uses: actions/upload-artifact@v2
         with:
