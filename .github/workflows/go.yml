@@ -55,12 +55,8 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build
-        run: env CGO_ENABLED=1 GO111MODULE=on go build -v ${{ matrix.extra_flags }} ./...
-        
-      - name: Rename executable
-        run: |
-          mv ./tray ./kb_ui${{ matrix.suffix }}
-          
+        run: env CGO_ENABLED=1 GO111MODULE=on go build -v ${{ matrix.extra_flags }}
+
       - name: Archive
         uses: actions/upload-artifact@v2
         with:
