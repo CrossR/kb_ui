@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 
 	"github.com/CrossR/kb_ui/tray/icons"
 
@@ -24,6 +26,7 @@ type Keybinding struct {
 }
 
 type TrayState struct {
+	logger     *log.Logger
 	keybinds   *[]Keybinding
 	layer_id   int
 	layer_name string
@@ -35,8 +38,8 @@ type SaveState struct {
 }
 
 func Start() {
-	var keybinds []Keybinding
-	trayState := TrayState{&keybinds, 0, ""}
+
+	trayState := getInitialState()
 
 	onReady := func() {
 		traySetup(&trayState)
@@ -51,27 +54,34 @@ func Start() {
 // On exit, save the current state of the application, un-register any keybindings.
 func trayEnd(state *TrayState) {
 	for _, hk := range *state.keybinds {
-		hk.bind.Unregister()
+		err := hk.bind.Unregister()
+
+		if err != nil {
+			state.logger.Println("Failed to unregister keybind:", err.Error())
+		}
+
 		hk.bind = nil
 	}
 
 	dataFile, err := xdg.DataFile("kb_ui/state.json")
 	if err != nil {
+		state.logger.Printf("Failed to create state file: %s\n", err.Error())
 		return
 	}
 
 	endState := SaveState{state.layer_id, state.layer_name}
 	json, err := json.MarshalIndent(endState, "", "    ")
 	if err != nil {
+		state.logger.Printf("Failed to marshall state: %s\n", err.Error())
 		return
 	}
 
 	err = ioutil.WriteFile(dataFile, json, 0644)
 
 	if err != nil {
+		state.logger.Printf("Failed to save state: %s\n", err.Error())
 		return
 	}
-
 }
 
 // On ready, load the user configuration, setup the keybindings, then just wait
@@ -86,6 +96,7 @@ func traySetup(state *TrayState) {
 	config, err := LoadConfiguration()
 
 	if len(config.LayerInfo) == 0 {
+		state.logger.Println("No layers defined, exiting.")
 		systray.Quit()
 		return
 	}
@@ -96,6 +107,7 @@ func traySetup(state *TrayState) {
 	mCurrentLayer := systray.AddMenuItem(defaultName, defaultName)
 
 	if err != nil {
+		state.logger.Printf("Error loading configuration: %s\n", err.Error())
 		systray.Quit()
 		return
 	}
@@ -111,6 +123,7 @@ func traySetup(state *TrayState) {
 	// the previous state.
 	dataFile, err := xdg.DataFile("kb_ui/state.json")
 	if err != nil {
+		state.logger.Printf("Could not find state file: %s\n", err.Error())
 		return
 	}
 	file, _ := ioutil.ReadFile(dataFile)
@@ -123,26 +136,26 @@ func traySetup(state *TrayState) {
 		// Parse the configurations strings into its mods / keys and icon.
 		mods := ParseModifiers(binding.Mods)
 		if len(mods) == 0 {
-			systray.Quit()
-			break
+			state.logger.Printf("Error parsing mods\n")
+			continue
 		}
 
 		key, err := ParseKey(binding.Key)
 		if err != nil {
-			systray.Quit()
-			break
+			state.logger.Printf("Error parsing key: %s\n", err.Error())
+			continue
 		}
 
 		icon, err := ParseIcon(binding.Icon)
 		if err != nil {
-			systray.Quit()
-			break
+			state.logger.Printf("Error parsing icon: %s\n", err.Error())
 		}
 
 		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon}
-		setupKeybinding(state, &keybind, mCurrentLayer)
+		err = setupKeybinding(state, &keybind, mCurrentLayer)
 
-		if keybind.bind == nil {
+		if err != nil {
+			state.logger.Printf("Error setting up keybind %d: %s\n", i, err.Error())
 			continue
 		}
 
@@ -172,19 +185,21 @@ func traySetup(state *TrayState) {
 
 	// Finally, hook up the info binding.
 	infoBind, err := infoKeybind(state, &config)
-	if err != nil {
+	if err == nil {
 		*state.keybinds = append(*state.keybinds, infoBind)
+	} else {
+		state.logger.Printf("Failed to create info keybind: %s\n", err.Error())
 	}
 }
 
 // Setup the actual keybinds to notify the user of layer changes.
-func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.MenuItem) {
+func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.MenuItem) error {
 
 	hk := hotkey.New(keybind.mods, keybind.key)
 	err := hk.Register()
 
 	if err != nil {
-		return
+		return err
 	}
 
 	go func() {
@@ -205,6 +220,8 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 	}()
 
 	keybind.bind = hk
+
+	return nil
 }
 
 // A small helper function that just alerts the user on the current state.
@@ -217,7 +234,7 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 
 	key, err := ParseKey(config.InfoKey)
 	if err != nil {
-		systray.Quit()
+		return Keybinding{}, errors.New("failed to parse info key")
 	}
 
 	keybind := Keybinding{nil, mods, key, -1, "Info", nil}
@@ -238,4 +255,17 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 	keybind.bind = hk
 
 	return keybind, nil
+}
+
+func getInitialState() TrayState {
+
+	var keybinds []Keybinding
+
+	log_file_path, _ := xdg.DataFile("kb_ui/kb_ui.log")
+	f, _ := os.OpenFile(log_file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	logger := log.New(f, "", log.LstdFlags)
+
+	return TrayState{logger, &keybinds, 0, ""}
+
 }
