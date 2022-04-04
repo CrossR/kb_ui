@@ -37,6 +37,7 @@ type TrayState struct {
 type SaveState struct {
 	PreviousId   int    `json:"id"`
 	PreviousName string `json:"name"`
+	WasAlt       bool   `json:"was_alt"`
 }
 
 func Start() {
@@ -71,7 +72,7 @@ func trayEnd(state *TrayState) {
 		return
 	}
 
-	endState := SaveState{state.layer_id, state.layer_name}
+	endState := SaveState{state.layer_id, state.layer_name, state.is_alt}
 	json, err := json.MarshalIndent(endState, "", "    ")
 	if err != nil {
 		state.logger.Printf("Failed to marshall state: %s\n", err.Error())
@@ -172,9 +173,15 @@ func traySetup(state *TrayState) {
 		// If this is the state we left off in last time, set it.
 		if binding.Name == prevState.PreviousName {
 			mCurrentLayer.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
-			systray.SetIcon(*keybind.icon)
 			state.layer_id = i
 			state.layer_name = keybind.name
+			state.is_alt = prevState.WasAlt
+
+			if state.is_alt {
+				systray.SetIcon(*keybind.alt_icon)
+			} else {
+				systray.SetIcon(*keybind.icon)
+			}
 		}
 	}
 
