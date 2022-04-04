@@ -17,12 +17,13 @@ import (
 )
 
 type Keybinding struct {
-	bind *hotkey.Hotkey
-	mods []hotkey.Modifier
-	key  hotkey.Key
-	id   int
-	name string
-	icon *[]byte
+	bind     *hotkey.Hotkey
+	mods     []hotkey.Modifier
+	key      hotkey.Key
+	id       int
+	name     string
+	icon     *[]byte
+	alt_icon *[]byte
 }
 
 type TrayState struct {
@@ -30,6 +31,7 @@ type TrayState struct {
 	keybinds   *[]Keybinding
 	layer_id   int
 	layer_name string
+	is_alt     bool
 }
 
 type SaveState struct {
@@ -151,7 +153,12 @@ func traySetup(state *TrayState) {
 			state.logger.Printf("Error parsing icon: %s\n", err.Error())
 		}
 
-		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon}
+		alt_icon, err := ParseIcon(binding.AltIcon)
+		if err != nil {
+			state.logger.Printf("Error parsing icon: %s\n", err.Error())
+		}
+
+		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon, &alt_icon}
 		err = setupKeybinding(state, &keybind, mCurrentLayer)
 
 		if err != nil {
@@ -183,12 +190,19 @@ func traySetup(state *TrayState) {
 		OpenConfig()
 	}()
 
-	// Finally, hook up the info binding.
+	// Finally, hook up the auxillary bindings.
 	infoBind, err := infoKeybind(state, &config)
 	if err == nil {
 		*state.keybinds = append(*state.keybinds, infoBind)
 	} else {
 		state.logger.Printf("Failed to create info keybind: %s\n", err.Error())
+	}
+
+	altModeBinding, err := altModeKeybind(state, &config)
+	if err == nil {
+		*state.keybinds = append(*state.keybinds, altModeBinding)
+	} else {
+		state.logger.Printf("Failed to create alt mode keybind: %s\n", err.Error())
 	}
 }
 
@@ -216,6 +230,7 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 			// Make sure the app state is saved.
 			state.layer_id = keybind.id
 			state.layer_name = keybind.name
+			state.is_alt = false
 		}
 	}()
 
@@ -237,7 +252,7 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 		return Keybinding{}, errors.New("failed to parse info key")
 	}
 
-	keybind := Keybinding{nil, mods, key, -1, "Info", nil}
+	keybind := Keybinding{nil, mods, key, -1, "Info", nil, nil}
 	hk := hotkey.New(keybind.mods, keybind.key)
 	err = hk.Register()
 
@@ -257,6 +272,54 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 	return keybind, nil
 }
 
+// A small helper function that just toggles the current app icon to its
+// alternative form. This can be useful for many reasons, but the main driver
+// was the ability to show disconnected states.
+func altModeKeybind(state *TrayState, config *Config) (Keybinding, error) {
+
+	mods := ParseModifiers(config.AltMods)
+	if len(mods) == 0 {
+		return Keybinding{}, errors.New("alt mode keybind declared with no modifiers")
+	}
+
+	key, err := ParseKey(config.AltKey)
+	if err != nil {
+		return Keybinding{}, errors.New("failed to parse alt mode key")
+	}
+
+	keybind := Keybinding{nil, mods, key, -1, "Alt Mode", nil, nil}
+	hk := hotkey.New(keybind.mods, keybind.key)
+	err = hk.Register()
+
+	if err != nil {
+		return Keybinding{}, errors.New("alt mode keybind failed to register")
+	}
+
+	go func() {
+		for hk != nil {
+			<-hk.Keydown()
+
+			// Update the tray icon and title.
+			bind := (*state.keybinds)[state.layer_id]
+
+			if state.is_alt {
+				systray.SetIcon(*bind.icon)
+			} else {
+				systray.SetIcon(*bind.alt_icon)
+			}
+
+			state.is_alt = !state.is_alt
+
+		}
+	}()
+
+	keybind.bind = hk
+
+	return keybind, nil
+}
+
+// Get the initial application state.
+// Mostly just sets up the logger.
 func getInitialState() TrayState {
 
 	var keybinds []Keybinding
@@ -266,6 +329,6 @@ func getInitialState() TrayState {
 
 	logger := log.New(f, "", log.LstdFlags)
 
-	return TrayState{logger, &keybinds, 0, ""}
+	return TrayState{logger, &keybinds, 0, "", false}
 
 }
