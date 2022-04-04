@@ -1,10 +1,14 @@
 package tray
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/CrossR/kb_ui/tray/icons"
+	"github.com/adrg/xdg"
 	"golang.design/x/hotkey"
 )
 
@@ -38,6 +42,27 @@ func ParseKey(key string) (hotkey.Key, error) {
 	return hotkey.KeyA, fmt.Errorf("unknown key: %s", key)
 }
 
+func loadIconFile(icon_path string) ([]byte, error) {
+
+	full_path, err := xdg.ConfigFile(fmt.Sprintf("kb_ui/%s", icon_path))
+
+	if err != nil {
+		return icons.KB_Light_Data, err
+	}
+
+	if _, err := os.Stat(full_path); errors.Is(err, os.ErrNotExist) {
+		return icons.KB_Light_Data, fmt.Errorf("icon file not found: %s", full_path)
+	}
+
+	file, err := ioutil.ReadFile(full_path)
+
+	if err != nil {
+		return icons.KB_Light_Data, err
+	}
+
+	return file, nil
+}
+
 func ParseIcon(icon string) ([]byte, error) {
 
 	lower_icon := strings.ToLower(icon)
@@ -47,15 +72,7 @@ func ParseIcon(icon string) ([]byte, error) {
 		return icons.KB_Dark_Data, nil
 	case "kb_light":
 		return icons.KB_Light_Data, nil
-	case "gaming_dark":
-		return icons.Game_Dark_Data, nil
-	case "gaming_light":
-		return icons.Game_Light_Data, nil
-	case "mac_dark":
-		return icons.Mac_Dark_Data, nil
-	case "mac_light":
-		return icons.Mac_Light_Data, nil
+	default:
+		return loadIconFile(icon)
 	}
-
-	return icons.KB_Dark_Data, fmt.Errorf("unknown icon: %s", icon)
 }
