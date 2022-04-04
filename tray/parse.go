@@ -37,10 +37,6 @@ func ParseKey(key string) (hotkey.Key, error) {
 		return hotkey.Key8, nil
 	case "9":
 		return hotkey.Key9, nil
-	case "f1":
-		return hotkey.Key(0x70), nil
-	case "f2":
-		return hotkey.Key(0x71), nil
 	}
 
 	return hotkey.KeyA, fmt.Errorf("unknown key: %s", key)
