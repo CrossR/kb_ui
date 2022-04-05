@@ -32,12 +32,14 @@ type TrayState struct {
 	layer_id   int
 	layer_name string
 	is_alt     bool
+	quiet      bool
 }
 
 type SaveState struct {
 	PreviousId   int    `json:"id"`
 	PreviousName string `json:"name"`
 	WasAlt       bool   `json:"was_alt"`
+	Quiet        bool   `json:"quiet"`
 }
 
 func Start() {
@@ -72,7 +74,7 @@ func trayEnd(state *TrayState) {
 		return
 	}
 
-	endState := SaveState{state.layer_id, state.layer_name, state.is_alt}
+	endState := SaveState{state.layer_id, state.layer_name, state.is_alt, state.quiet}
 	json, err := json.MarshalIndent(endState, "", "    ")
 	if err != nil {
 		state.logger.Printf("Failed to marshall state: %s\n", err.Error())
@@ -118,6 +120,7 @@ func traySetup(state *TrayState) {
 	// Add the final entries to configure or quit the application.
 	systray.AddSeparator()
 	mConfigure := systray.AddMenuItem("Configure", "Configure")
+	mQuiet := systray.AddMenuItem("Quiet", "Don't show notifications")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
 	// Load the previous run file, if it exists.
@@ -133,6 +136,7 @@ func traySetup(state *TrayState) {
 
 	prevState := SaveState{}
 	json.Unmarshal(file, &prevState)
+	state.quiet = prevState.Quiet
 
 	for i, binding := range config.LayerInfo {
 
@@ -197,6 +201,12 @@ func traySetup(state *TrayState) {
 		OpenConfig()
 	}()
 
+	// Toggle the quiet mode.
+	go func() {
+		<-mQuiet.ClickedCh
+		state.quiet = !state.quiet
+	}()
+
 	// Finally, hook up the auxillary bindings.
 	infoBind, err := infoKeybind(state, &config)
 	if err == nil {
@@ -227,8 +237,11 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 		layerSwapName := fmt.Sprintf("Swapped to %s layer", keybind.name)
 		for hk != nil {
 			<-hk.Keydown()
-			// Notify the user of the layer change.
-			beeep.Notify("Layer Swapped", layerSwapName, "")
+
+			// If we are already in this layer, do nothing.
+			if state.layer_id == keybind.id {
+				continue
+			}
 
 			// Update the tray icon and title.
 			trayItem.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
@@ -238,6 +251,18 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 			state.layer_id = keybind.id
 			state.layer_name = keybind.name
 			state.is_alt = false
+
+			// If quiet, don't alert the user.
+			if state.quiet {
+				continue
+			}
+
+			// Notify the user of the layer change.
+			err := beeep.Notify("Layer Swapped", layerSwapName, "")
+
+			if err != nil {
+				state.logger.Printf("Error notifying user: %s\n", err.Error())
+			}
 		}
 	}()
 
@@ -336,6 +361,6 @@ func getInitialState() TrayState {
 
 	logger := log.New(f, "", log.LstdFlags)
 
-	return TrayState{logger, &keybinds, 0, "", false}
+	return TrayState{logger, &keybinds, 0, "", false, false}
 
 }
