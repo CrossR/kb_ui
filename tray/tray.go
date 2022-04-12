@@ -68,6 +68,8 @@ func trayEnd(state *TrayState) {
 		hk.bind = nil
 	}
 
+	state.logger.Printf("Final state was %+v\n", state)
+
 	dataFile, err := xdg.DataFile("kb_ui/state.json")
 	if err != nil {
 		state.logger.Printf("Failed to create state file: %s\n", err.Error())
@@ -87,6 +89,8 @@ func trayEnd(state *TrayState) {
 		state.logger.Printf("Failed to save state: %s\n", err.Error())
 		return
 	}
+
+	state.logger.Printf("Saved state %+v\n", endState)
 }
 
 // On ready, load the user configuration, setup the keybindings, then just wait
@@ -136,6 +140,8 @@ func traySetup(state *TrayState) {
 
 	prevState := SaveState{}
 	json.Unmarshal(file, &prevState)
+
+	state.logger.Printf("Loaded previous state: %+v\n", prevState)
 	state.quiet = prevState.Quiet
 
 	for i, binding := range config.LayerInfo {
@@ -205,6 +211,12 @@ func traySetup(state *TrayState) {
 	go func() {
 		<-mQuiet.ClickedCh
 		state.quiet = !state.quiet
+
+		if state.quiet {
+			mQuiet.SetTitle("Notify")
+		} else {
+			mQuiet.SetTitle("Quiet")
+		}
 	}()
 
 	// Finally, hook up the auxillary bindings.
