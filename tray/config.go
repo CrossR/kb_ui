@@ -11,19 +11,20 @@ import (
 )
 
 type LayerConfig struct {
-	Key     string `json:"key"`
-	Mods    string `json:"mods"`
-	Name    string `json:"name"`
-	Icon    string `json:"icon"`
-	AltIcon string `json:"alt_icon"`
+	Key      string `json:"key"`
+	Mods     string `json:"mods"`
+	Name     string `json:"name"`
+	Icon     string `json:"icon"`
+	DarkIcon string `json:"dark_icon"`
 }
 
 type Config struct {
-	LayerInfo []LayerConfig `json:"layers"`
-	InfoMods  string        `json:"infoMods"`
-	InfoKey   string        `json:"infoKey"`
-	AltMods   string        `json:"altMods"`
-	AltKey    string        `json:"altKey"`
+	LayerInfo      []LayerConfig `json:"layers"`
+	InfoMods       string        `json:"infoMods"`
+	InfoKey        string        `json:"infoKey"`
+	ConnectMods    string        `json:"connectMods"`
+	ConnectKey     string        `json:"connectKey"`
+	DisconnectIcon string        `json:"disconnectIcon"`
 }
 
 func LoadConfiguration() (Config, error) {
@@ -51,7 +52,7 @@ func initConfig() {
 	defaultBind := []LayerConfig{
 		{"1", "ctrl-shift-win-alt", "Gaming", "kb_light", "kb_dark"},
 	}
-	defaultConfig := Config{defaultBind, "ctrl-shift-win-alt", "0", "ctrl-shift-win-alt", "-"}
+	defaultConfig := Config{defaultBind, "ctrl-shift-win-alt", "0", "ctrl-shift-win-alt", "9", "disconnected"}
 
 	json, err := json.MarshalIndent(defaultConfig, "", "    ")
 

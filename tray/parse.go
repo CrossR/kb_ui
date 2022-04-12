@@ -72,6 +72,8 @@ func ParseIcon(icon string) ([]byte, error) {
 		return icons.KB_Dark_Data, nil
 	case "kb_light":
 		return icons.KB_Light_Data, nil
+	case "disconnected":
+		return icons.Disconnected_Data, nil
 	default:
 		return loadIconFile(icon)
 	}

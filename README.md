@@ -66,18 +66,20 @@ Most importantly, there are the icon swap bindings, defined as follows:
     "mods": "ctrl-shift-win-alt",
     "name": "Default",
     "icon": "kb_light",
-    "alt_icon": "icons/keyboard-alt.ico"
+    "dark_icon": "kb_dark"
 }
 ```
 
 Where `key` defines the input key that will be pressed, `mods` the sequence of
 modifier keys that will be held at the same time. `name` is the name you want to
-give the layer, `icon` and `alt_icon` are relative paths to the icon that you
-want to use, in `ico` format (`kb_light` and `kb_dark` are built in icons).
+give the layer, `icon` and `dark_icon` are relative paths to the icon that you
+want to use, in `ico` format (`kb_light`, `kb_dark` and `disconnected` are built
+in icons, so just use strings).
 
-The info and alt mode bindings are set individually, but work the same. The info
-binding is used to notify of the current layer, without changing layer, and the
-alt mode binding swap the icon between its two defined icons.
+The info and connect toggle bindings are set individually, but work the same.
+The info binding is used to notify of the current layer, without changing layer,
+and the connect toggle binding swap the icon between the current layer icon, and
+the disconnect icon (to show output device state).
 
 An example of my config can be found [here](https://github.com/CrossR/dotfiles/tree/master/kb_ui/.config/kb_ui).
 

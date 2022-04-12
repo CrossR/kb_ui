@@ -17,28 +17,28 @@ import (
 )
 
 type Keybinding struct {
-	bind     *hotkey.Hotkey
-	mods     []hotkey.Modifier
-	key      hotkey.Key
-	id       int
-	name     string
-	icon     *[]byte
-	alt_icon *[]byte
+	bind      *hotkey.Hotkey
+	mods      []hotkey.Modifier
+	key       hotkey.Key
+	id        int
+	name      string
+	icon      *[]byte
+	dark_icon *[]byte
 }
 
 type TrayState struct {
-	logger     *log.Logger
-	keybinds   *[]Keybinding
-	layer_id   int
-	layer_name string
-	is_alt     bool
-	quiet      bool
+	logger       *log.Logger
+	keybinds     *[]Keybinding
+	layer_id     int
+	layer_name   string
+	is_connected bool
+	quiet        bool
 }
 
 type SaveState struct {
 	PreviousId   int    `json:"id"`
 	PreviousName string `json:"name"`
-	WasAlt       bool   `json:"was_alt"`
+	WasConnected bool   `json:"was_connected"`
 	Quiet        bool   `json:"quiet"`
 }
 
@@ -76,7 +76,7 @@ func trayEnd(state *TrayState) {
 		return
 	}
 
-	endState := SaveState{state.layer_id, state.layer_name, state.is_alt, state.quiet}
+	endState := SaveState{state.layer_id, state.layer_name, state.is_connected, state.quiet}
 	json, err := json.MarshalIndent(endState, "", "    ")
 	if err != nil {
 		state.logger.Printf("Failed to marshall state: %s\n", err.Error())
@@ -164,12 +164,12 @@ func traySetup(state *TrayState) {
 			state.logger.Printf("Error parsing icon: %s\n", err.Error())
 		}
 
-		alt_icon, err := ParseIcon(binding.AltIcon)
+		dark_icon, err := ParseIcon(binding.DarkIcon)
 		if err != nil {
 			state.logger.Printf("Error parsing icon: %s\n", err.Error())
 		}
 
-		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon, &alt_icon}
+		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon, &dark_icon}
 		err = setupKeybinding(state, &keybind, mCurrentLayer)
 
 		if err != nil {
@@ -185,10 +185,10 @@ func traySetup(state *TrayState) {
 			mCurrentLayer.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
 			state.layer_id = i
 			state.layer_name = keybind.name
-			state.is_alt = prevState.WasAlt
+			state.is_connected = prevState.WasConnected
 
-			if state.is_alt {
-				systray.SetIcon(*keybind.alt_icon)
+			if state.is_connected {
+				systray.SetIcon(*keybind.dark_icon)
 			} else {
 				systray.SetIcon(*keybind.icon)
 			}
@@ -227,11 +227,11 @@ func traySetup(state *TrayState) {
 		state.logger.Printf("Failed to create info keybind: %s\n", err.Error())
 	}
 
-	altModeBinding, err := altModeKeybind(state, &config)
+	connectToggleBinding, err := connectKeybind(state, &config)
 	if err == nil {
-		*state.keybinds = append(*state.keybinds, altModeBinding)
+		*state.keybinds = append(*state.keybinds, connectToggleBinding)
 	} else {
-		state.logger.Printf("Failed to create alt mode keybind: %s\n", err.Error())
+		state.logger.Printf("Failed to create connect toggle keybind: %s\n", err.Error())
 	}
 }
 
@@ -262,7 +262,7 @@ func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.Me
 			// Make sure the app state is saved.
 			state.layer_id = keybind.id
 			state.layer_name = keybind.name
-			state.is_alt = false
+			state.is_connected = false
 
 			// If quiet, don't alert the user.
 			if state.quiet {
@@ -316,27 +316,27 @@ func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 	return keybind, nil
 }
 
-// A small helper function that just toggles the current app icon to its
-// alternative form. This can be useful for many reasons, but the main driver
-// was the ability to show disconnected states.
-func altModeKeybind(state *TrayState, config *Config) (Keybinding, error) {
+// A small helper function that just toggles the disconnected icon.
+// I.e., when the board swaps output to another device, swap to an icon
+// that shows this disconnected state.
+func connectKeybind(state *TrayState, config *Config) (Keybinding, error) {
 
-	mods := ParseModifiers(config.AltMods)
+	mods := ParseModifiers(config.ConnectMods)
 	if len(mods) == 0 {
-		return Keybinding{}, errors.New("alt mode keybind declared with no modifiers")
+		return Keybinding{}, errors.New("connect toggle keybind declared with no modifiers")
 	}
 
-	key, err := ParseKey(config.AltKey)
+	key, err := ParseKey(config.ConnectKey)
 	if err != nil {
-		return Keybinding{}, errors.New("failed to parse alt mode key")
+		return Keybinding{}, errors.New("failed to parse connect toggle key")
 	}
 
-	keybind := Keybinding{nil, mods, key, -1, "Alt Mode", nil, nil}
+	keybind := Keybinding{nil, mods, key, -1, "Connect Toggle", nil, nil}
 	hk := hotkey.New(keybind.mods, keybind.key)
 	err = hk.Register()
 
 	if err != nil {
-		return Keybinding{}, errors.New("alt mode keybind failed to register")
+		return Keybinding{}, errors.New("connect toggle keybind failed to register")
 	}
 
 	go func() {
@@ -346,13 +346,13 @@ func altModeKeybind(state *TrayState, config *Config) (Keybinding, error) {
 			// Update the tray icon and title.
 			bind := (*state.keybinds)[state.layer_id]
 
-			if state.is_alt {
+			if state.is_connected {
 				systray.SetIcon(*bind.icon)
 			} else {
-				systray.SetIcon(*bind.alt_icon)
+				systray.SetIcon(*bind.dark_icon)
 			}
 
-			state.is_alt = !state.is_alt
+			state.is_connected = !state.is_connected
 
 		}
 	}()
