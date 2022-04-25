@@ -25,5 +25,6 @@ require (
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
+	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 )

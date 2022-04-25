@@ -81,7 +81,12 @@ The info binding is used to notify of the current layer, without changing layer,
 and the connect toggle binding swap the icon between the current layer icon, and
 the disconnect icon (to show output device state).
 
-An example of my config can be found [here](https://github.com/CrossR/dotfiles/tree/master/kb_ui/.config/kb_ui).
+There is also configuration options for the notification system, which are set
+in the same file using `quietMode` set to `true` or `false`. Similarly, there is
+a dark mode toggle, which is set to `true` or `false`.
+
+An example of my config can be found
+[here](https://github.com/CrossR/dotfiles/tree/master/kb_ui/.config/kb_ui).
 
 Similarly, my ZMK config, with the macros to actually output these layer change
 keybinds can be found
@@ -97,4 +102,3 @@ when I swap back its out of sync. A pain sure, but one swap and it gets back in
 sync and it hardly seems worth fixing when ZMK should in the future be able to
 tell the current layer easily enough. So I'll swap to HID codes then, rather
 than fixing the odd edge case now.
-

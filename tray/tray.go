@@ -11,6 +11,7 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/getlantern/systray"
+	"golang.org/x/exp/slices"
 )
 
 type TrayState struct {
@@ -25,10 +26,10 @@ type TrayState struct {
 }
 
 type SaveState struct {
-	PreviousId   int    `json:"id"`
-	PreviousName string `json:"name"`
-	WasConnected bool   `json:"was_connected"`
-	Quiet        bool   `json:"quiet"`
+	LayerId     int    `json:"id"`
+	LayerName   string `json:"name"`
+	IsConnected bool   `json:"is_connected"`
+	Quiet       bool   `json:"quiet"`
 }
 
 func Start() {
@@ -116,22 +117,6 @@ func traySetup(state *TrayState) {
 	mQuiet := systray.AddMenuItem("Quiet", "Don't show notifications")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-	// Load the previous run file, if it exists.
-	// This can be used to setup the default layer.
-	// Don't worry about errors, just ignore it since its only a save state of
-	// the previous state.
-	dataFile, err := xdg.DataFile("kb_ui/state.json")
-	if err != nil {
-		state.logger.Printf("Could not find state file: %s\n", err.Error())
-	}
-	file, _ := ioutil.ReadFile(dataFile)
-
-	prevState := SaveState{}
-	json.Unmarshal(file, &prevState)
-
-	state.logger.Printf("Loaded previous state: %+v\n", prevState)
-	state.quiet = prevState.Quiet
-
 	// Parse the actual layer bindings out.
 	for i, binding := range config.LayerInfo {
 
@@ -145,16 +130,10 @@ func traySetup(state *TrayState) {
 
 		// Store the binding, so we can unregister it later.
 		*state.keybinds = append(*state.keybinds, keybind)
-
-		// If this is the state we left off in last time, set it.
-		if binding.Name == prevState.PreviousName {
-			mCurrentLayer.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
-			state.layer_id = i
-			state.layer_name = keybind.name
-			state.is_connected = prevState.WasConnected
-			systray.SetIcon(*keybind.GetIcon(state))
-		}
 	}
+
+	// Set the initial state of the application, if there is one.
+	loadPreviousState(state, mCurrentLayer)
 
 	// On tray quit event.
 	go func() {
@@ -215,4 +194,48 @@ func getInitialState() TrayState {
 
 	return TrayState{logger, &keybinds, 0, "", true, false, false, &disconnected_icon}
 
+}
+
+// Load the previous run file, if it exists.
+// This can be used to setup the default layer.
+// Don't worry about errors, just ignore it since its only a save state of
+// the previous state.
+func loadPreviousState(state *TrayState, mCurrentLayer *systray.MenuItem) {
+	dataFile, err := xdg.DataFile("kb_ui/state.json")
+
+	if err != nil {
+		state.logger.Printf("Could not find state file: %s\n", err.Error())
+		return
+	}
+
+	file, err := ioutil.ReadFile(dataFile)
+
+	if err != nil {
+		state.logger.Printf("Could not read state file: %s\n", err.Error())
+		return
+	}
+
+	prevState := SaveState{}
+	err = json.Unmarshal(file, &prevState)
+
+	if err != nil {
+		state.logger.Printf("Could not unmarshal state file: %s\n", err.Error())
+		return
+	}
+
+	state.logger.Printf("Loaded previous state: %+v\n", prevState)
+	state.quiet = prevState.Quiet
+
+	// If this is the state we left off in last time, set it.
+	mCurrentLayer.SetTitle(fmt.Sprintf("%s Layer", prevState.LayerName))
+	i := slices.IndexFunc(*state.keybinds, func(k Keybinding) bool {
+		return k.id == prevState.LayerId && k.name == prevState.LayerName
+	})
+	keybind := (*state.keybinds)[i]
+
+	state.layer_id = i
+	state.layer_name = keybind.name
+	state.is_connected = prevState.IsConnected
+
+	systray.SetIcon(*keybind.GetIcon(state))
 }

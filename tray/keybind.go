@@ -76,7 +76,6 @@ func (keybind *Keybinding) SetupKeybinding(state *TrayState, trayItem *systray.M
 			// Make sure the app state is saved.
 			state.layer_id = keybind.id
 			state.layer_name = keybind.name
-			state.is_connected = false
 
 			// If quiet, don't alert the user.
 			if state.quiet {
@@ -165,7 +164,6 @@ func SetupConnectKeybind(state *TrayState, config *Config) (Keybinding, error) {
 			bind := (*state.keybinds)[state.layer_id]
 			state.is_connected = !state.is_connected
 			systray.SetIcon(*bind.GetIcon(state))
-
 		}
 	}()
 

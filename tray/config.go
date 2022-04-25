@@ -26,6 +26,7 @@ type Config struct {
 	ConnectKey     string        `json:"connectKey"`
 	DisconnectIcon string        `json:"disconnectIcon"`
 	DarkMode       bool          `json:"darkMode"`
+	QuietMode      bool          `json:"quietMode"`
 }
 
 func LoadConfiguration() (Config, error) {
@@ -53,7 +54,13 @@ func initConfig() {
 	defaultBind := []LayerConfig{
 		{"1", "ctrl-shift-win-alt", "Gaming", "kb_light", "kb_dark"},
 	}
-	defaultConfig := Config{defaultBind, "ctrl-shift-win-alt", "0", "ctrl-shift-win-alt", "9", "disconnected", false}
+	defaultConfig := Config{
+		defaultBind,
+		"ctrl-shift-win-alt", "0",
+		"ctrl-shift-win-alt", "9",
+		"disconnected",
+		false, false,
+	}
 
 	json, err := json.MarshalIndent(defaultConfig, "", "    ")
 
@@ -74,4 +81,20 @@ func initConfig() {
 func OpenConfig() {
 	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
 	open.Start(configFile)
+}
+
+func LoadConfig(state *TrayState) *Config {
+	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
+
+	file, err := ioutil.ReadFile(configFile)
+
+	if err != nil {
+		state.logger.Printf("Failed to load config: %s\n", err.Error())
+		return nil
+	}
+
+	cfg := Config{}
+	json.Unmarshal(file, &cfg)
+
+	return &cfg
 }
