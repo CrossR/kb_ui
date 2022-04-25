@@ -64,6 +64,10 @@ func (keybind *Keybinding) SetupKeybinding(state *TrayState, trayItem *systray.M
 		for hk != nil {
 			<-hk.Keydown()
 
+			if state.quitting {
+				break
+			}
+
 			// If we are already in this layer, do nothing.
 			if state.layer_id == keybind.id {
 				continue
@@ -120,6 +124,11 @@ func SetupInfoKeybind(state *TrayState, config *Config) (Keybinding, error) {
 	go func() {
 		for hk != nil {
 			<-hk.Keydown()
+
+			if state.quitting {
+				break
+			}
+
 			if state.is_connected {
 				beeep.Notify(state.layer_name, "The current keybinding layer is "+state.layer_name, "")
 			} else {
@@ -159,6 +168,10 @@ func SetupConnectKeybind(state *TrayState, config *Config) (Keybinding, error) {
 	go func() {
 		for hk != nil {
 			<-hk.Keydown()
+
+			if state.quitting {
+				break
+			}
 
 			// Update the tray icon and title.
 			bind := (*state.keybinds)[state.layer_id]

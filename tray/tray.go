@@ -23,6 +23,7 @@ type TrayState struct {
 	dark_mode       bool
 	quiet           bool
 	disconnect_icon *[]byte
+	quitting        bool
 }
 
 type SaveState struct {
@@ -48,6 +49,9 @@ func Start() {
 
 // On exit, save the current state of the application, un-register any keybindings.
 func trayEnd(state *TrayState) {
+
+	state.quitting = true
+
 	for _, hk := range *state.keybinds {
 		err := hk.bind.Unregister()
 
@@ -191,8 +195,9 @@ func getInitialState() TrayState {
 	logger := log.New(f, "", log.LstdFlags)
 
 	disconnected_icon, _ := ParseIcon("disconnected")
+	quitting := false
 
-	return TrayState{logger, &keybinds, 0, "", true, false, false, &disconnected_icon}
+	return TrayState{logger, &keybinds, 0, "", true, false, false, &disconnected_icon, quitting}
 
 }
 
