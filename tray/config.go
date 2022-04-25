@@ -15,7 +15,7 @@ type LayerConfig struct {
 	Mods     string `json:"mods"`
 	Name     string `json:"name"`
 	Icon     string `json:"icon"`
-	DarkIcon string `json:"dark_icon"`
+	DarkIcon string `json:"dark_icon,omitempty"`
 }
 
 type Config struct {
@@ -25,6 +25,7 @@ type Config struct {
 	ConnectMods    string        `json:"connectMods"`
 	ConnectKey     string        `json:"connectKey"`
 	DisconnectIcon string        `json:"disconnectIcon"`
+	DarkMode       bool          `json:"darkMode"`
 }
 
 func LoadConfiguration() (Config, error) {
@@ -52,7 +53,7 @@ func initConfig() {
 	defaultBind := []LayerConfig{
 		{"1", "ctrl-shift-win-alt", "Gaming", "kb_light", "kb_dark"},
 	}
-	defaultConfig := Config{defaultBind, "ctrl-shift-win-alt", "0", "ctrl-shift-win-alt", "9", "disconnected"}
+	defaultConfig := Config{defaultBind, "ctrl-shift-win-alt", "0", "ctrl-shift-win-alt", "9", "disconnected", false}
 
 	json, err := json.MarshalIndent(defaultConfig, "", "    ")
 

@@ -2,7 +2,6 @@ package tray
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,28 +10,18 @@ import (
 	"github.com/CrossR/kb_ui/tray/icons"
 
 	"github.com/adrg/xdg"
-	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
-	"golang.design/x/hotkey"
 )
 
-type Keybinding struct {
-	bind      *hotkey.Hotkey
-	mods      []hotkey.Modifier
-	key       hotkey.Key
-	id        int
-	name      string
-	icon      *[]byte
-	dark_icon *[]byte
-}
-
 type TrayState struct {
-	logger       *log.Logger
-	keybinds     *[]Keybinding
-	layer_id     int
-	layer_name   string
-	is_connected bool
-	quiet        bool
+	logger          *log.Logger
+	keybinds        *[]Keybinding
+	layer_id        int
+	layer_name      string
+	is_connected    bool
+	dark_mode       bool
+	quiet           bool
+	disconnect_icon *[]byte
 }
 
 type SaveState struct {
@@ -134,7 +123,6 @@ func traySetup(state *TrayState) {
 	dataFile, err := xdg.DataFile("kb_ui/state.json")
 	if err != nil {
 		state.logger.Printf("Could not find state file: %s\n", err.Error())
-		return
 	}
 	file, _ := ioutil.ReadFile(dataFile)
 
@@ -144,33 +132,11 @@ func traySetup(state *TrayState) {
 	state.logger.Printf("Loaded previous state: %+v\n", prevState)
 	state.quiet = prevState.Quiet
 
+	// Parse the actual layer bindings out.
 	for i, binding := range config.LayerInfo {
 
-		// Parse the configurations strings into its mods / keys and icon.
-		mods := ParseModifiers(binding.Mods)
-		if len(mods) == 0 {
-			state.logger.Printf("Error parsing mods\n")
-			continue
-		}
-
-		key, err := ParseKey(binding.Key)
-		if err != nil {
-			state.logger.Printf("Error parsing key: %s\n", err.Error())
-			continue
-		}
-
-		icon, err := ParseIcon(binding.Icon)
-		if err != nil {
-			state.logger.Printf("Error parsing icon: %s\n", err.Error())
-		}
-
-		dark_icon, err := ParseIcon(binding.DarkIcon)
-		if err != nil {
-			state.logger.Printf("Error parsing icon: %s\n", err.Error())
-		}
-
-		keybind := Keybinding{nil, mods, key, i, binding.Name, &icon, &dark_icon}
-		err = setupKeybinding(state, &keybind, mCurrentLayer)
+		keybind := MakeKeybinding(state, binding, i)
+		err = keybind.SetupKeybinding(state, mCurrentLayer)
 
 		if err != nil {
 			state.logger.Printf("Error setting up keybind %d: %s\n", i, err.Error())
@@ -186,12 +152,7 @@ func traySetup(state *TrayState) {
 			state.layer_id = i
 			state.layer_name = keybind.name
 			state.is_connected = prevState.WasConnected
-
-			if state.is_connected {
-				systray.SetIcon(*keybind.dark_icon)
-			} else {
-				systray.SetIcon(*keybind.icon)
-			}
+			systray.SetIcon(*keybind.GetIcon(state))
 		}
 	}
 
@@ -203,163 +164,40 @@ func traySetup(state *TrayState) {
 
 	// On configure event.
 	go func() {
-		<-mConfigure.ClickedCh
-		OpenConfig()
+		for mConfigure != nil {
+			<-mConfigure.ClickedCh
+			OpenConfig()
+		}
 	}()
 
 	// Toggle the quiet mode.
 	go func() {
-		<-mQuiet.ClickedCh
-		state.quiet = !state.quiet
+		for mQuiet != nil {
+			<-mQuiet.ClickedCh
+			state.quiet = !state.quiet
 
-		if state.quiet {
-			mQuiet.SetTitle("Notify")
-		} else {
-			mQuiet.SetTitle("Quiet")
+			if state.quiet {
+				mQuiet.SetTitle("Notify")
+			} else {
+				mQuiet.SetTitle("Quiet")
+			}
 		}
 	}()
 
 	// Finally, hook up the auxillary bindings.
-	infoBind, err := infoKeybind(state, &config)
+	infoBind, err := SetupInfoKeybind(state, &config)
 	if err == nil {
 		*state.keybinds = append(*state.keybinds, infoBind)
 	} else {
 		state.logger.Printf("Failed to create info keybind: %s\n", err.Error())
 	}
 
-	connectToggleBinding, err := connectKeybind(state, &config)
+	connectToggleBinding, err := SetupConnectKeybind(state, &config)
 	if err == nil {
 		*state.keybinds = append(*state.keybinds, connectToggleBinding)
 	} else {
 		state.logger.Printf("Failed to create connect toggle keybind: %s\n", err.Error())
 	}
-}
-
-// Setup the actual keybinds to notify the user of layer changes.
-func setupKeybinding(state *TrayState, keybind *Keybinding, trayItem *systray.MenuItem) error {
-
-	hk := hotkey.New(keybind.mods, keybind.key)
-	err := hk.Register()
-
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		layerSwapName := fmt.Sprintf("Swapped to %s layer", keybind.name)
-		for hk != nil {
-			<-hk.Keydown()
-
-			// If we are already in this layer, do nothing.
-			if state.layer_id == keybind.id {
-				continue
-			}
-
-			// Update the tray icon and title.
-			trayItem.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
-			systray.SetIcon(*keybind.icon)
-
-			// Make sure the app state is saved.
-			state.layer_id = keybind.id
-			state.layer_name = keybind.name
-			state.is_connected = false
-
-			// If quiet, don't alert the user.
-			if state.quiet {
-				continue
-			}
-
-			// Notify the user of the layer change.
-			err := beeep.Notify("Layer Swapped", layerSwapName, "")
-
-			if err != nil {
-				state.logger.Printf("Error notifying user: %s\n", err.Error())
-			}
-		}
-	}()
-
-	keybind.bind = hk
-
-	return nil
-}
-
-// A small helper function that just alerts the user on the current state.
-func infoKeybind(state *TrayState, config *Config) (Keybinding, error) {
-
-	mods := ParseModifiers(config.InfoMods)
-	if len(mods) == 0 {
-		return Keybinding{}, errors.New("info keybind declared with no modifiers")
-	}
-
-	key, err := ParseKey(config.InfoKey)
-	if err != nil {
-		return Keybinding{}, errors.New("failed to parse info key")
-	}
-
-	keybind := Keybinding{nil, mods, key, -1, "Info", nil, nil}
-	hk := hotkey.New(keybind.mods, keybind.key)
-	err = hk.Register()
-
-	if err != nil {
-		return Keybinding{}, errors.New("info keybind failed to register")
-	}
-
-	go func() {
-		for hk != nil {
-			<-hk.Keydown()
-			beeep.Notify(state.layer_name, "The current keybinding layer is "+state.layer_name, "")
-		}
-	}()
-
-	keybind.bind = hk
-
-	return keybind, nil
-}
-
-// A small helper function that just toggles the disconnected icon.
-// I.e., when the board swaps output to another device, swap to an icon
-// that shows this disconnected state.
-func connectKeybind(state *TrayState, config *Config) (Keybinding, error) {
-
-	mods := ParseModifiers(config.ConnectMods)
-	if len(mods) == 0 {
-		return Keybinding{}, errors.New("connect toggle keybind declared with no modifiers")
-	}
-
-	key, err := ParseKey(config.ConnectKey)
-	if err != nil {
-		return Keybinding{}, errors.New("failed to parse connect toggle key")
-	}
-
-	keybind := Keybinding{nil, mods, key, -1, "Connect Toggle", nil, nil}
-	hk := hotkey.New(keybind.mods, keybind.key)
-	err = hk.Register()
-
-	if err != nil {
-		return Keybinding{}, errors.New("connect toggle keybind failed to register")
-	}
-
-	go func() {
-		for hk != nil {
-			<-hk.Keydown()
-
-			// Update the tray icon and title.
-			bind := (*state.keybinds)[state.layer_id]
-
-			if state.is_connected {
-				systray.SetIcon(*bind.icon)
-			} else {
-				systray.SetIcon(*bind.dark_icon)
-			}
-
-			state.is_connected = !state.is_connected
-
-		}
-	}()
-
-	keybind.bind = hk
-
-	return keybind, nil
 }
 
 // Get the initial application state.
@@ -373,6 +211,8 @@ func getInitialState() TrayState {
 
 	logger := log.New(f, "", log.LstdFlags)
 
-	return TrayState{logger, &keybinds, 0, "", false, false}
+	disconnected_icon, _ := ParseIcon("disconnected")
+
+	return TrayState{logger, &keybinds, 0, "", true, false, false, &disconnected_icon}
 
 }
