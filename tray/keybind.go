@@ -50,7 +50,7 @@ func MakeKeybinding(state *TrayState, binding LayerConfig, i int) Keybinding {
 }
 
 // Setup the actual keybinds to notify the user of layer changes.
-func (keybind *Keybinding) SetupKeybinding(state *TrayState, trayItem *systray.MenuItem) error {
+func (keybind *Keybinding) SetupKeybinding(state *TrayState) error {
 
 	hk := hotkey.New(keybind.mods, keybind.key)
 	err := hk.Register()
@@ -74,7 +74,7 @@ func (keybind *Keybinding) SetupKeybinding(state *TrayState, trayItem *systray.M
 			}
 
 			// Update the tray icon and title.
-			trayItem.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
+			state.tray.layer.SetTitle(fmt.Sprintf("%s Layer", keybind.name))
 			systray.SetIcon(*keybind.GetIcon(state))
 
 			// Make sure the app state is saved.

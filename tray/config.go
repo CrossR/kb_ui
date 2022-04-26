@@ -26,7 +26,6 @@ type Config struct {
 	ConnectKey     string        `json:"connectKey"`
 	DisconnectIcon string        `json:"disconnectIcon"`
 	DarkMode       bool          `json:"darkMode"`
-	QuietMode      bool          `json:"quietMode"`
 }
 
 func LoadConfiguration() (Config, error) {
@@ -59,7 +58,7 @@ func initConfig() {
 		"ctrl-shift-win-alt", "0",
 		"ctrl-shift-win-alt", "9",
 		"disconnected",
-		false, false,
+		false,
 	}
 
 	json, err := json.MarshalIndent(defaultConfig, "", "    ")
