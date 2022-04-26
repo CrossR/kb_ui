@@ -57,6 +57,7 @@ func appStart(state *TrayState) {
 		return
 	}
 
+	// Load the actual user disconnect icon.
 	*state.disconnect_icon, err = ParseIcon(config.DisconnectIcon)
 
 	if err != nil {

@@ -20,12 +20,12 @@ type LayerConfig struct {
 
 type Config struct {
 	LayerInfo      []LayerConfig `json:"layers"`
-	InfoMods       string        `json:"infoMods"`
-	InfoKey        string        `json:"infoKey"`
-	ConnectMods    string        `json:"connectMods"`
-	ConnectKey     string        `json:"connectKey"`
-	DisconnectIcon string        `json:"disconnectIcon"`
-	DarkMode       bool          `json:"darkMode"`
+	InfoMods       string        `json:"infoMods,omitempty"`
+	InfoKey        string        `json:"infoKey,omitempty"`
+	ConnectMods    string        `json:"connectMods,omitempty"`
+	ConnectKey     string        `json:"connectKey,omitempty"`
+	DisconnectIcon string        `json:"disconnectIcon,omitempty"`
+	DarkMode       bool          `json:"darkMode,omitempty"`
 }
 
 func LoadConfiguration() (Config, error) {
