@@ -57,6 +57,13 @@ func appStart(state *TrayState) {
 		return
 	}
 
+	*state.disconnect_icon, err = ParseIcon(config.DisconnectIcon)
+
+	if err != nil {
+		state.logger.Printf("Error parsing disconnect icon: %s\n", err.Error())
+		*state.disconnect_icon, _ = ParseIcon("disconnected")
+	}
+
 	// Parse the actual layer bindings out.
 	for i, binding := range config.LayerInfo {
 
