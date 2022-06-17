@@ -1,6 +1,8 @@
 package tray
 
 import (
+	"fmt"
+
 	"github.com/CrossR/kb_ui/tray/icons"
 
 	"github.com/getlantern/systray"
@@ -13,13 +15,15 @@ type TrayItems struct {
 	quit   *systray.MenuItem
 }
 
+var Version string
+
 // On ready, load the user configuration, setup the keybindings, then just wait
 // and react to them.
 func SetupInitialTrayState(state *TrayState) {
 
 	// Setup the default parts of the system tray.
 	systray.SetTemplateIcon(icons.KB_Dark_Data, icons.KB_Dark_Data)
-	systray.SetTooltip("Keyboard Status")
+	systray.SetTooltip(fmt.Sprintf("Keyboard Status (%s)", GetVersion()))
 
 	// Set a default layer, so there is something set before checking for a
 	// previous run file.
@@ -56,4 +60,13 @@ func SetupInitialTrayState(state *TrayState) {
 	}()
 
 	state.tray = &TrayItems{mCurrentLayer, mQuiet, mConfigure, mQuit}
+}
+
+// Get version string, this will be set dynamically for releases to git hash.
+func GetVersion() string {
+	if Version != "" {
+		return Version
+	}
+
+	return "Dev"
 }
