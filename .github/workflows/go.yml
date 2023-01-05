@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18
 
@@ -43,7 +43,7 @@ jobs:
           sudo apt -y install libayatana-appindicator3-dev
 
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
@@ -58,7 +58,7 @@ jobs:
         run: env CGO_ENABLED=1 GO111MODULE=on go build -ldflags "-X github.com/CrossR/kb_ui/tray.Version=${GITHUB_SHA::7}" -v ${{ matrix.extra_flags }}
 
       - name: Archive
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-kb_ui
           path: ./kb_ui${{ matrix.suffix }}
