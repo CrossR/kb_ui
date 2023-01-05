@@ -55,7 +55,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build
-        run: env CGO_ENABLED=1 GO111MODULE=on go build -ldflags "-X github.com/CrossR/kb_ui/tray.Version=$GITHUB_SHA" -v ${{ matrix.extra_flags }}
+        run: env CGO_ENABLED=1 GO111MODULE=on go build -ldflags "-X github.com/CrossR/kb_ui/tray.Version=${GITHUB_SHA::7}" -v ${{ matrix.extra_flags }}
 
       - name: Archive
         uses: actions/upload-artifact@v2
