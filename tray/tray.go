@@ -10,7 +10,6 @@ import (
 
 type TrayItems struct {
 	layer  *systray.MenuItem
-	quiet  *systray.MenuItem
 	config *systray.MenuItem
 	quit   *systray.MenuItem
 }
@@ -32,7 +31,6 @@ func SetupInitialTrayState(state *TrayState) {
 	// Add the final entries to configure or quit the application.
 	systray.AddSeparator()
 	mConfigure := systray.AddMenuItem("Configure", "Open the app config file")
-	mQuiet := systray.AddMenuItem("Quiet notifications", "Don't show notifications")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
@@ -50,16 +48,7 @@ func SetupInitialTrayState(state *TrayState) {
 		}
 	}()
 
-	// Toggle the quiet mode.
-	go func() {
-		for mQuiet != nil {
-			<-mQuiet.ClickedCh
-			state.quiet = !state.quiet
-			state.setQuiet()
-		}
-	}()
-
-	state.tray = &TrayItems{mCurrentLayer, mQuiet, mConfigure, mQuit}
+	state.tray = &TrayItems{mCurrentLayer, mConfigure, mQuit}
 }
 
 // Get version string, this will be set dynamically for releases to git hash.

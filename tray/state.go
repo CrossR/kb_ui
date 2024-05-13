@@ -20,7 +20,6 @@ type TrayState struct {
 	layer_name      string
 	is_connected    bool
 	dark_mode       bool
-	quiet           bool
 	disconnect_icon *[]byte
 	quitting        bool
 }
@@ -29,7 +28,6 @@ type SaveState struct {
 	LayerId     int    `json:"id"`
 	LayerName   string `json:"name"`
 	IsConnected bool   `json:"is_connected"`
-	Quiet       bool   `json:"quiet"`
 }
 
 // Get the initial application state.
@@ -46,7 +44,7 @@ func GetInitialState() TrayState {
 	disconnected_icon, _ := ParseIcon("disconnected")
 	quitting := false
 
-	return TrayState{nil, logger, &keybinds, 0, "", true, false, false, &disconnected_icon, quitting}
+	return TrayState{nil, logger, &keybinds, 0, "", true, false, &disconnected_icon, quitting}
 
 }
 
@@ -59,7 +57,7 @@ func (state *TrayState) SaveCurrentState() {
 		return
 	}
 
-	endState := SaveState{state.layer_id, state.layer_name, state.is_connected, state.quiet}
+	endState := SaveState{state.layer_id, state.layer_name, state.is_connected}
 	json, err := json.MarshalIndent(endState, "", "    ")
 	if err != nil {
 		state.logger.Printf("Failed to marshall state: %s\n", err.Error())
@@ -115,21 +113,7 @@ func (state *TrayState) LoadPreviousState() {
 	state.layer_id = i
 	state.layer_name = keybind.name
 	state.is_connected = prevState.IsConnected
-	state.quiet = prevState.Quiet
 
 	// Finally, update the tray with this loaded state.
 	systray.SetIcon(*keybind.GetIcon(state))
-	state.setQuiet()
-}
-
-func (state *TrayState) setQuiet() {
-	if state.tray == nil {
-		return
-	} else if state.quiet {
-		state.tray.quiet.SetTitle("Turn notifications on")
-		state.tray.quiet.SetTooltip("Notify on any layer change")
-	} else {
-		state.tray.quiet.SetTitle("Quiet notifications")
-		state.tray.quiet.SetTitle("Don't show notifications")
-	}
 }

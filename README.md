@@ -1,7 +1,6 @@
 # kb_ui - Keyboard System Tray Tool
 
-A tiny systray utility to help me keep track of keyboard layers. Shows notification and
-system tray icon for the current layer.
+A tiny systray utility to help me keep track of keyboard layers, showing the current layer.
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/10038688/162264281-c1dbca2d-025b-4091-bdd8-d931679aafe8.PNG">
@@ -40,12 +39,12 @@ Or toggle the output from USB to bluetooth...
 
 ## Technology
 
-Written in golang, and uses a very simple binding flag to notify of layer swaps. That
+Written in golang, to produce a single, self-contained binary for every platform. That
 is, when I press a layer swap key (to move into gaming mode for example), as well as
 swapping layer, a unique keycode is sent to the system that `kb_ui` reacts to, swapping
-the current state of the tray, sending a notification using the OS level notification
-system, and then updating the tray icon to a user selected icon. Layers are defined in a
-json file with their name, icon and the input key-press that activates it.
+the current state of the tray, updating the tray icon to a user selected icon.
+Layers are defined in a json file with their name, icon and the input key-press
+that activates it.
 
 ## Setup
 
@@ -76,14 +75,9 @@ give the layer, `icon` and `dark_icon` are relative paths to the icon that you
 want to use, in `ico` format (`kb_light`, `kb_dark` and `disconnected` are built
 in icons, so just use strings).
 
-The info and connect toggle bindings are set individually, but work the same.
-The info binding is used to notify of the current layer, without changing layer,
-and the connect toggle binding swap the icon between the current layer icon, and
+The connect toggle binding is set individually, but works the same.
+The connect toggle binding swaps the icon between the current layer icon, and
 the disconnect icon (to show output device state).
-
-There is also configuration options for the notification system, which are set
-in the same file using `quietMode` set to `true` or `false`. Similarly, there is
-a dark mode toggle, which is set to `true` or `false`.
 
 An example of my config can be found
 [here](https://github.com/CrossR/dotfiles/tree/master/kb_ui/.config/kb_ui).

@@ -83,14 +83,6 @@ func appStart(state *TrayState) {
 	// Set the initial state of the application, if there is one.
 	state.LoadPreviousState()
 
-	// Finally, hook up the auxillary bindings.
-	infoBind, err := SetupInfoKeybind(state, &config)
-	if err == nil {
-		*state.keybinds = append(*state.keybinds, infoBind)
-	} else {
-		state.logger.Printf("Failed to create info keybind: %s\n", err.Error())
-	}
-
 	connectToggleBinding, err := SetupConnectKeybind(state, &config)
 	if err == nil {
 		*state.keybinds = append(*state.keybinds, connectToggleBinding)

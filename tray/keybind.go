@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gen2brain/beeep"
 	"github.com/getlantern/systray"
 	"golang.design/x/hotkey"
 )
@@ -49,7 +48,7 @@ func MakeKeybinding(state *TrayState, binding LayerConfig, i int) Keybinding {
 	return keybind
 }
 
-// Setup the actual keybinds to notify the user of layer changes.
+// Setup the actual keybinds...
 func (keybind *Keybinding) SetupKeybinding(state *TrayState) error {
 
 	hk := hotkey.New(keybind.mods, keybind.key)
@@ -60,7 +59,6 @@ func (keybind *Keybinding) SetupKeybinding(state *TrayState) error {
 	}
 
 	go func() {
-		layerSwapName := fmt.Sprintf("Swapped to %s layer", keybind.name)
 		for hk != nil {
 			<-hk.Keydown()
 
@@ -80,66 +78,12 @@ func (keybind *Keybinding) SetupKeybinding(state *TrayState) error {
 			// Make sure the app state is saved.
 			state.layer_id = keybind.id
 			state.layer_name = keybind.name
-
-			// If quiet, don't alert the user.
-			if state.quiet {
-				continue
-			}
-
-			// Notify the user of the layer change.
-			err := beeep.Notify("Layer Swapped", layerSwapName, "")
-
-			if err != nil {
-				state.logger.Printf("Error notifying user: %s\n", err.Error())
-			}
 		}
 	}()
 
 	keybind.bind = hk
 
 	return nil
-}
-
-// A small helper function that just alerts the user on the current state.
-func SetupInfoKeybind(state *TrayState, config *Config) (Keybinding, error) {
-
-	mods := ParseModifiers(config.InfoMods)
-	if len(mods) == 0 {
-		return Keybinding{}, errors.New("info keybind declared with no modifiers")
-	}
-
-	key, err := ParseKey(config.InfoKey)
-	if err != nil {
-		return Keybinding{}, errors.New("failed to parse info key")
-	}
-
-	keybind := Keybinding{nil, mods, key, -1, "Info", nil, nil}
-	hk := hotkey.New(keybind.mods, keybind.key)
-	err = hk.Register()
-
-	if err != nil {
-		return Keybinding{}, errors.New("info keybind failed to register")
-	}
-
-	go func() {
-		for hk != nil {
-			<-hk.Keydown()
-
-			if state.quitting {
-				break
-			}
-
-			if state.is_connected {
-				beeep.Notify(state.layer_name, "The current keybinding layer is "+state.layer_name, "")
-			} else {
-				beeep.Notify("Disconnected", "The keyboard is currently not connected...", "")
-			}
-		}
-	}()
-
-	keybind.bind = hk
-
-	return keybind, nil
 }
 
 // A small helper function that just toggles the disconnected icon.

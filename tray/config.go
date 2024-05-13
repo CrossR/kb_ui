@@ -20,8 +20,6 @@ type LayerConfig struct {
 
 type Config struct {
 	LayerInfo      []LayerConfig `json:"layers"`
-	InfoMods       string        `json:"infoMods,omitempty"`
-	InfoKey        string        `json:"infoKey,omitempty"`
 	ConnectMods    string        `json:"connectMods,omitempty"`
 	ConnectKey     string        `json:"connectKey,omitempty"`
 	DisconnectIcon string        `json:"disconnectIcon,omitempty"`
@@ -55,7 +53,6 @@ func initConfig() {
 	}
 	defaultConfig := Config{
 		defaultBind,
-		"ctrl-shift-win-alt", "0",
 		"ctrl-shift-win-alt", "9",
 		"disconnected",
 		false,
