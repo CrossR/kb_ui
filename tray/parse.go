@@ -3,7 +3,6 @@ package tray
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -54,7 +53,7 @@ func loadIconFile(icon_path string) ([]byte, error) {
 		return icons.KB_Light_Data, fmt.Errorf("icon file not found: %s", full_path)
 	}
 
-	file, err := ioutil.ReadFile(full_path)
+	file, err := os.ReadFile(full_path)
 
 	if err != nil {
 		return icons.KB_Light_Data, err

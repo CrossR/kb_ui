@@ -3,7 +3,6 @@ package tray
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"os"
 
 	"github.com/adrg/xdg"
@@ -35,7 +34,7 @@ func LoadConfiguration() (Config, error) {
 		initConfig()
 	}
 
-	file, err := ioutil.ReadFile(configFile)
+	file, err := os.ReadFile(configFile)
 
 	if err != nil {
 		return Config{}, err
@@ -65,7 +64,7 @@ func initConfig() {
 	}
 
 	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
-	err = ioutil.WriteFile(configFile, json, 0644)
+	err = os.WriteFile(configFile, json, 0644)
 
 	if err != nil {
 		return
@@ -82,7 +81,7 @@ func OpenConfig() {
 func LoadConfig(state *TrayState) *Config {
 	configFile, _ := xdg.ConfigFile("/kb_ui/config.json")
 
-	file, err := ioutil.ReadFile(configFile)
+	file, err := os.ReadFile(configFile)
 
 	if err != nil {
 		state.logger.Printf("Failed to load config: %s\n", err.Error())

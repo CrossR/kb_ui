@@ -3,7 +3,6 @@ package tray
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -64,7 +63,7 @@ func (state *TrayState) SaveCurrentState() {
 		return
 	}
 
-	err = ioutil.WriteFile(dataFile, json, 0644)
+	err = os.WriteFile(dataFile, json, 0644)
 
 	if err != nil {
 		state.logger.Printf("Failed to save state: %s\n", err.Error())
@@ -86,7 +85,7 @@ func (state *TrayState) LoadPreviousState() {
 		return
 	}
 
-	file, err := ioutil.ReadFile(dataFile)
+	file, err := os.ReadFile(dataFile)
 
 	if err != nil {
 		state.logger.Printf("Could not read state file: %s\n", err.Error())
